@@ -6,6 +6,7 @@ from urllib.parse import urlparse, unquote
 from searx import logger
 from searx.engines import engines
 from searx.metrology.error_recorder import record_error
+from searx.utils import add_scheme_to_url
 from searx import settings
 
 
@@ -142,9 +143,9 @@ def result_score(result, language):
         if language in domain_parts:
             weight *= 1.1
 
-    occurences = len(result['positions'])
+    occurrences = len(result['positions'])
 
-    return sum((occurences * weight) / position for position in result['positions'])
+    return sum((occurrences * weight) / position for position in result['positions'])
 
 
 class ResultContainer:
@@ -240,13 +241,18 @@ class ResultContainer:
         result['parsed_url'] = urlparse(result['url'])
 
         # if the result has no scheme, use http as default
-        if not result['parsed_url'].scheme:
-            result['parsed_url'] = result['parsed_url']._replace(scheme="http")
+        if not result['parsed_url'].scheme or result['parsed_url'].scheme == '':
+            result['parsed_url'] = result['parsed_url']._replace(scheme='http')
             result['url'] = result['parsed_url'].geturl()
+
+        if 'thumbnail_src' in result:
+            result['thumbnail_src'] = add_scheme_to_url(result['thumbnail_src'])
+        if 'img_src' in result:
+            result['img_src'] = add_scheme_to_url(result['img_src'])
 
         result['engines'] = set([result['engine']])
 
-        # strip multiple spaces and cariage returns from content
+        # strip multiple spaces and carriage returns from content
         if result.get('content'):
             result['content'] = WHITESPACE_REGEX.sub(' ', result['content'])
 
@@ -272,7 +278,7 @@ class ResultContainer:
                     return merged_result
                 else:
                     # it's an image
-                    # it's a duplicate if the parsed_url, template and img_src are differents
+                    # it's a duplicate if the parsed_url, template and img_src are different
                     if result.get('img_src', '') == merged_result.get('img_src', ''):
                         return merged_result
         return None

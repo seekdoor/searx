@@ -52,6 +52,7 @@ def request(query, params):
         offset=offset)
 
     params['url'] = base_url + search_path
+    params['headers']['Accept'] = 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
 
     return params
 
@@ -66,11 +67,13 @@ def response(resp):
     for result in eval_xpath(dom, '//div[@class="sa_cc"]'):
         link = eval_xpath(result, './/h3/a')[0]
         url = link.attrib.get('href')
+        pretty_url = extract_text(eval_xpath(result, './/cite'))
         title = extract_text(link)
         content = extract_text(eval_xpath(result, './/p'))
 
         # append result
         results.append({'url': url,
+                        'pretty_url': pretty_url,
                         'title': title,
                         'content': content})
 
@@ -78,11 +81,13 @@ def response(resp):
     for result in eval_xpath(dom, '//li[@class="b_algo"]'):
         link = eval_xpath(result, './/h2/a')[0]
         url = link.attrib.get('href')
+        pretty_url = extract_text(eval_xpath(result, './/cite'))
         title = extract_text(link)
         content = extract_text(eval_xpath(result, './/p'))
 
         # append result
         results.append({'url': url,
+                        'pretty_url': pretty_url,
                         'title': title,
                         'content': content})
 

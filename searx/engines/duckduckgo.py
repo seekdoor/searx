@@ -14,11 +14,11 @@ from searx.utils import (
     extract_text,
     match_language,
 )
-from searx.network import get
+from searx.poolrequests import get
 
 # about
 about = {
-    "website": 'https://lite.duckduckgo.com/lite',
+    "website": 'https://lite.duckduckgo.com/lite/',
     "wikidata_id": 'Q12805',
     "official_api_documentation": 'https://duckduckgo.com/api',
     "use_official_api": False,
@@ -27,7 +27,7 @@ about = {
 }
 
 # engine dependent config
-categories = ['general']
+categories = ['general', 'web']
 paging = True
 supported_languages_url = 'https://duckduckgo.com/util/u588.js'
 time_range_support = True
@@ -39,18 +39,13 @@ language_aliases = {
     'ko': 'kr-KR',
     'sl-SI': 'sl-SL',
     'zh-TW': 'tzh-TW',
-    'zh-HK': 'tzh-HK'
+    'zh-HK': 'tzh-HK',
 }
 
-time_range_dict = {
-    'day': 'd',
-    'week': 'w',
-    'month': 'm',
-    'year': 'y'
-}
+time_range_dict = {'day': 'd', 'week': 'w', 'month': 'm', 'year': 'y'}
 
 # search-url
-url = 'https://lite.duckduckgo.com/lite'
+url = 'https://lite.duckduckgo.com/lite/'
 url_ping = 'https://duckduckgo.com/t/sl_l'
 
 
@@ -78,6 +73,9 @@ def request(query, params):
     # link again and again ..
 
     params['headers']['Content-Type'] = 'application/x-www-form-urlencoded'
+    params['headers']['Origin'] = 'https://lite.duckduckgo.com'
+    params['headers']['Referer'] = 'https://lite.duckduckgo.com/'
+    params['headers']['User-Agent'] = 'Mozilla/5.0'
 
     # initial page does not have an offset
     if params['pageno'] == 2:
@@ -163,11 +161,13 @@ def response(resp):
         if td_content is None:
             continue
 
-        results.append({
-            'title': a_tag.text_content(),
-            'content': extract_text(td_content),
-            'url': a_tag.get('href'),
-        })
+        results.append(
+            {
+                'title': a_tag.text_content(),
+                'content': extract_text(td_content),
+                'url': a_tag.get('href'),
+            }
+        )
 
     return results
 
@@ -178,7 +178,7 @@ def _fetch_supported_languages(resp):
     # response is a js file with regions as an embedded object
     response_page = resp.text
     response_page = response_page[response_page.find('regions:{') + 8:]
-    response_page = response_page[:response_page.find('}') + 1]
+    response_page = response_page[: response_page.find('}') + 1]
 
     regions_json = loads(response_page)
     supported_languages = map((lambda x: x[3:] + '-' + x[:2].upper()), regions_json.keys())
